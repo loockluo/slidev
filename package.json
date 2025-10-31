@@ -75,13 +75,5 @@
   "resolutions": {
     "typescript": "catalog:dev",
     "vite": "catalog:prod"
-  },
-  "simple-git-hooks": {
-    "pre-commit": "npx lint-staged"
-  },
-  "lint-staged": {
-    "**/*.{js,ts,vue,json}": [
-      "eslint --fix --cache"
-    ]
   }
 }

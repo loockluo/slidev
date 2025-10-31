@@ -3,6 +3,8 @@ packages:
   - demo/*
   - cypress/fixtures/*
   - docs
+  - course
+  - background
 
 shamefullyHoist: true
 ignoreWorkspaceRootCheck: true

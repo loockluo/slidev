@@ -39,6 +39,8 @@
     "./packages/**/*.vue",
     "./demo/**/*.ts",
     "./demo/**/*.vue",
+    "./course/**/*.vue",
+    "./course/**/*.ts",
     "./test/**/*.ts"
   ],
   "exclude": ["**/dist/**", "**/node_modules/**"]
