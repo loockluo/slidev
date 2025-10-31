@@ -24,8 +24,7 @@
     "docs": "pnpm -C docs run dev",
     "docs:build": "pnpm run --filter {./docs}... build && pnpm demo:build",
     "release": "bumpp package.json packages/*/package.json docs/package.json --all -x \"zx scripts/update-versions.mjs\"",
-    "test": "vitest test",
-    "prepare": "simple-git-hooks"
+    "test": "vitest test"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:dev",
@@ -54,14 +53,12 @@
     "eslint": "catalog:dev",
     "eslint-plugin-format": "catalog:dev",
     "katex": "catalog:frontend",
-    "lint-staged": "catalog:dev",
     "mermaid": "catalog:frontend",
     "playwright-chromium": "catalog:dev",
     "prettier": "catalog:frontend",
     "prettier-plugin-slidev": "catalog:dev",
     "rimraf": "catalog:dev",
     "shiki": "catalog:frontend",
-    "simple-git-hooks": "catalog:dev",
     "taze": "catalog:dev",
     "tinyexec": "catalog:prod",
     "tsdown": "catalog:dev",

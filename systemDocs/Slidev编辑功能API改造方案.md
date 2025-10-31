@@ -3,6 +3,7 @@
 ## 需求分析
 
 ### 核心诉求
+
 - **保持现有前端功能不变** - 所有编辑界面和交互逻辑保持原样
 - **编辑操作改为 API 调用** - 将现有的文件系统操作改为后端 API 调用
 - **无额外功能需求** - 不需要协作编辑、权限管理等复杂功能
@@ -10,6 +11,7 @@
 ## 技术方案
 
 ### 现有架构分析
+
 ```typescript
 // 当前数据流
 useSlideInfo -> update() -> POST /__slidev/slides/${no}.json
@@ -20,6 +22,7 @@ useSlideInfo -> update() -> POST /__slidev/slides/${no}.json
 ```
 
 ### 改造后数据流
+
 ```typescript
 // 新数据流
 useSlideInfo -> update() -> PUT /api/documents/${doc_id}/slides/${no}
@@ -67,7 +70,7 @@ export function useSlideInfo(no: number): UseSlideInfo {
   const update = async (data: SlidePatch) => {
     try {
       const response = await fetch(url, {
-        method: 'PUT',  // 使用 PUT 方法更新资源
+        method: 'PUT', // 使用 PUT 方法更新资源
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -87,7 +90,8 @@ export function useSlideInfo(no: number): UseSlideInfo {
       }
 
       return result
-    } catch (err) {
+    }
+    catch (err) {
       console.error('Failed to update slide:', err)
       throw err
     }
@@ -194,7 +198,7 @@ export default function setupRoutes() {
   // 确保编辑相关路由包含 doc_id 参数
   routes.push({
     name: 'notes-edit',
-    path: '/:doc_id/notes-edit',  // 添加 doc_id 参数
+    path: '/:doc_id/notes-edit', // 添加 doc_id 参数
     component: () => import('../pages/notes-edit.vue')
   })
 
@@ -213,7 +217,7 @@ export default function setupRoutes() {
 
 ```typescript
 // 在 useSlideInfo 中添加错误处理
-const update = async (data: SlidePatch) => {
+async function update(data: SlidePatch) {
   try {
     const response = await fetch(url, {
       method: 'PUT',
@@ -236,7 +240,8 @@ const update = async (data: SlidePatch) => {
     }
 
     return result
-  } catch (err) {
+  }
+  catch (err) {
     console.error('Failed to update slide:', err)
 
     // 可以显示用户友好的错误提示
@@ -250,21 +255,23 @@ const update = async (data: SlidePatch) => {
 }
 ```
 
-
 ## 总结
 
 ### 改造要点
+
 1. **只修改 useSlideInfo.ts** - 更改 API 端点，添加 doc_id 参数
 2. **保持所有组件不变** - SideEditor、notes-edit、NoteEditable 等无需修改
 3. **保持用户交互不变** - 所有编辑功能、快捷键、自动保存等保持原样
 
 ### 实施步骤
+
 1. **修改 useSlideInfo.ts** - 更新 API 端点
 2. **实现后端 API** - 提供对应的接口
 3. **更新路由配置** - 确保所有页面都有 doc_id 参数
 4. **测试验证** - 确保所有编辑功能正常工作
 
 ### 优势
+
 - **最小改动** - 只修改一个核心函数
 - **零学习成本** - 用户界面和交互完全不变
 - **易于维护** - 逻辑集中，便于调试

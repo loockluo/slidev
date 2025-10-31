@@ -12,6 +12,9 @@
     <RouterLink to="/overview" class="page-link">
       <div class="i-carbon:list-boxes" /> Overview
     </RouterLink>
+    <RouterLink to="/article" class="page-link">
+      <div class="i-carbon:document" /> Article
+    </RouterLink>
   </div>
 </template>
 

@@ -34,6 +34,12 @@ export default function setupRoutes() {
         beforeEnter: passwordGuard,
       },
       {
+        name: 'article',
+        path: '/article',
+        component: () => import('../pages/article.vue'),
+        beforeEnter: passwordGuard,
+      },
+      {
         name: 'notes',
         path: '/notes',
         component: () => import('../pages/notes.vue'),

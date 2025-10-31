@@ -13,6 +13,30 @@ linkWorkspacePackages: true
 
 patchedDependencies:
   '@hedgedoc/markdown-it-plugins@2.1.4': patches/@hedgedoc__markdown-it-plugins@2.1.4.patch
+catalog:
+  '@types/bcryptjs': ^0.0.0
+  '@types/cors': ^0.0.0
+  '@types/express': ^0.0.0
+  '@types/jest': ^0.0.0
+  '@types/jsonwebtoken': ^0.0.0
+  '@types/multer': ^0.0.0
+  '@typescript-eslint/eslint-plugin': ^0.0.0
+  '@typescript-eslint/parser': ^0.0.0
+  bcryptjs: ^0.0.0
+  better-sqlite3: ^0.0.0
+  cors: ^0.0.0
+  dotenv: ^0.0.0
+  express: ^0.0.0
+  helmet: ^0.0.0
+  jest: ^0.0.0
+  joi: ^0.0.0
+  jsonwebtoken: ^0.0.0
+  multer: ^0.0.0
+  reflect-metadata: ^0.0.0
+  sharp: ^0.0.0
+  ts-jest: ^0.0.0
+  typeorm: ^0.0.0
+  winston: ^0.0.0
 catalogs:
   demo:
     '@vue/compiler-sfc': ^3.5.22
@@ -22,14 +46,12 @@ catalogs:
     cypress: ^14.5.4
     eslint: ^9.38.0
     eslint-plugin-format: ^1.0.2
-    lint-staged: ^16.2.4
     nodemon: ^3.1.10
     ovsx: ^0.10.6
     playwright-chromium: ^1.56.1
     postcss-nested: ^7.0.2
     prettier-plugin-slidev: ^1.0.5
     rimraf: ^6.0.1
-    simple-git-hooks: ^2.13.1
     taze: ^19.8.1
     tsdown: ^0.15.8
     tsx: ^4.20.6
@@ -169,6 +191,5 @@ onlyBuiltDependencies:
   - esbuild
   - keytar
   - playwright-chromium
-  - simple-git-hooks
   - typeit
   - unrs-resolver
