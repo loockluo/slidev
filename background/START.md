@@ -3,12 +3,14 @@
 ## 快速启动
 
 1. **安装依赖**
+
    ```bash
    cd background
    pnpm install
    ```
 
 2. **启动开发服务器**
+
    ```bash
    pnpm dev
    ```
@@ -22,11 +24,13 @@
 ## API 测试示例
 
 ### 1. 健康检查
+
 ```bash
 curl http://localhost:3000/api/health
 ```
 
 ### 2. 用户注册
+
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -38,6 +42,7 @@ curl -X POST http://localhost:3000/api/auth/register \
 ```
 
 ### 3. 用户登录
+
 ```bash
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -48,6 +53,7 @@ curl -X POST http://localhost:3000/api/auth/login \
 ```
 
 ### 4. 创建文档（需要认证）
+
 ```bash
 # 先登录获取 token，然后：
 curl -X POST http://localhost:3000/api/documents \
@@ -61,6 +67,7 @@ curl -X POST http://localhost:3000/api/documents \
 ```
 
 ### 5. 获取文档列表
+
 ```bash
 curl -X GET http://localhost:3000/api/documents \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
@@ -69,15 +76,19 @@ curl -X GET http://localhost:3000/api/documents \
 ## 常见问题
 
 ### Q: 启动时提示模块找不到
+
 A: 确保已运行 `pnpm install` 安装所有依赖
 
 ### Q: 数据库连接失败
+
 A: 检查 `.env` 文件中的数据库配置，确保有写入权限
 
 ### Q: JWT 认证失败
+
 A: 检查请求头中的 `Authorization` 格式是否正确：`Bearer <token>`
 
 ### Q: CORS 错误
+
 A: 检查 `.env` 文件中的 `CORS_ORIGIN` 配置
 
 ## 开发调试

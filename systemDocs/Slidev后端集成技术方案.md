@@ -7,6 +7,7 @@
 ## 2. 当前架构分析
 
 ### 2.1 现有路由结构
+
 ```typescript
 // 当前路由 (setup/routes.ts)
 /                    -> 重定向到 /1
@@ -19,6 +20,7 @@
 ```
 
 ### 2.2 现有数据流
+
 ```typescript
 // 数据来源 (logic/slides.ts)
 import { slides } from '#slidev/slides'  // 本地编译生成的幻灯片数据
@@ -30,6 +32,7 @@ export function getSlide(no: number | string) {
 ```
 
 ### 2.3 现有导航逻辑
+
 ```typescript
 // 路径生成 (logic/slides.ts)
 export function getSlidePath(route, presenter, exporting) {
@@ -40,6 +43,7 @@ export function getSlidePath(route, presenter, exporting) {
 ## 3. 新架构设计
 
 ### 3.1 新路由结构
+
 ```typescript
 // 带 PPT ID 的路由结构
 /manage                     -> PPT 管理列表页面
@@ -55,16 +59,17 @@ export function getSlidePath(route, presenter, exporting) {
 ```
 
 ### 3.2 URL 参数设计
+
 ```typescript
 interface RouteParams {
-  doc_id: string       // 文档的唯一标识符
-  no?: string          // 幻灯片页码 (可选)
+  doc_id: string // 文档的唯一标识符
+  no?: string // 幻灯片页码 (可选)
 }
 
 interface RouteQuery {
-  clicks?: string     // 点击次数
-  embedded?: string   // 嵌入模式
-  password?: string   // 访问密码
+  clicks?: string // 点击次数
+  embedded?: string // 嵌入模式
+  password?: string // 访问密码
   // ... 其他现有查询参数
 }
 ```
@@ -72,23 +77,24 @@ interface RouteQuery {
 ## 4. 后端 API 集成方案
 
 ### 4.1 API 接口设计
+
 ```typescript
 // PPT 相关 API
 interface PPTAPI {
   // 获取 PPT 基本信息
-  getPresentation(pptId: string): Promise<Presentation>
+  getPresentation: (pptId: string) => Promise<Presentation>
 
   // 获取 PPT 幻灯片数据
-  getSlides(pptId: string): Promise<SlideData[]>
+  getSlides: (pptId: string) => Promise<SlideData[]>
 
   // 获取单个幻灯片
-  getSlide(pptId: string, slideNo: number): Promise<SlideData>
+  getSlide: (pptId: string, slideNo: number) => Promise<SlideData>
 
   // 获取 PPT 列表
-  getPresentations(): Promise<Presentation[]>
+  getPresentations: () => Promise<Presentation[]>
 
   // 删除 PPT
-  deletePresentation(pptId: string): Promise<void>
+  deletePresentation: (pptId: string) => Promise<void>
 }
 
 // 数据类型定义
@@ -105,8 +111,8 @@ interface Presentation {
 
 interface SlideData {
   no: number
-  content: string        // Markdown 内容
-  frontmatter: any       // Frontmatter 数据
+  content: string // Markdown 内容
+  frontmatter: any // Frontmatter 数据
   meta?: {
     layout?: string
     level?: number
@@ -116,6 +122,7 @@ interface SlideData {
 ```
 
 ### 4.2 API 客户端实现
+
 ```typescript
 // api/presentation.ts
 class PresentationAPI {
@@ -127,19 +134,22 @@ class PresentationAPI {
 
   async getPresentation(pptId: string): Promise<Presentation> {
     const response = await fetch(`${this.baseURL}/api/documents/${pptId}`)
-    if (!response.ok) throw new Error(`Failed to fetch presentation: ${pptId}`)
+    if (!response.ok)
+      throw new Error(`Failed to fetch presentation: ${pptId}`)
     return response.json()
   }
 
   async getSlides(pptId: string): Promise<SlideData[]> {
     const response = await fetch(`${this.baseURL}/api/documents/${pptId}/slides`)
-    if (!response.ok) throw new Error(`Failed to fetch slides: ${pptId}`)
+    if (!response.ok)
+      throw new Error(`Failed to fetch slides: ${pptId}`)
     return response.json()
   }
 
   async getPresentations(): Promise<Presentation[]> {
     const response = await fetch(`${this.baseURL}/api/documents`)
-    if (!response.ok) throw new Error('Failed to fetch presentations')
+    if (!response.ok)
+      throw new Error('Failed to fetch presentations')
     return response.json()
   }
 
@@ -147,7 +157,8 @@ class PresentationAPI {
     const response = await fetch(`${this.baseURL}/api/documents/${pptId}`, {
       method: 'DELETE'
     })
-    if (!response.ok) throw new Error(`Failed to delete presentation: ${pptId}`)
+    if (!response.ok)
+      throw new Error(`Failed to delete presentation: ${pptId}`)
   }
 }
 
@@ -158,6 +169,7 @@ export const presentationAPI = new PresentationAPI('/api')
 ## 5. 状态管理改造
 
 ### 5.1 PPT 数据状态管理
+
 ```typescript
 // stores/presentation.ts
 export const usePresentationStore = defineStore('presentation', () => {
@@ -192,10 +204,12 @@ export const usePresentationStore = defineStore('presentation', () => {
       currentDocId.value = docId
       currentPresentation.value = presentation
       currentSlides.value = slides
-    } catch (err) {
+    }
+    catch (err) {
       error.value = err instanceof Error ? err.message : 'Unknown error'
       throw err
-    } finally {
+    }
+    finally {
       loading.value = false
     }
   }
@@ -207,10 +221,12 @@ export const usePresentationStore = defineStore('presentation', () => {
 
     try {
       presentations.value = await presentationAPI.getPresentations()
-    } catch (err) {
+    }
+    catch (err) {
       listError.value = err instanceof Error ? err.message : 'Unknown error'
       throw err
-    } finally {
+    }
+    finally {
       listLoading.value = false
     }
   }
@@ -229,7 +245,8 @@ export const usePresentationStore = defineStore('presentation', () => {
         currentPresentation.value = null
         currentSlides.value = []
       }
-    } catch (err) {
+    }
+    catch (err) {
       throw err
     }
   }
@@ -254,6 +271,7 @@ export const usePresentationStore = defineStore('presentation', () => {
 ```
 
 ### 5.2 幻灯片数据处理
+
 ```typescript
 // composables/useSlidesData.ts
 export function useSlidesData() {
@@ -274,7 +292,7 @@ export function useSlidesData() {
         slide: {
           frontmatter: slide.frontmatter,
           start: 0, // 需要根据实际情况计算
-          end: 0   // 需要根据实际情况计算
+          end: 0 // 需要根据实际情况计算
         }
       }
     }))
@@ -300,6 +318,7 @@ export function useSlidesData() {
 ## 6. 路由改造方案
 
 ### 6.1 路由配置修改
+
 ```typescript
 // setup/routes.ts (修改版)
 export default function setupRoutes() {
@@ -372,6 +391,7 @@ export default function setupRoutes() {
 ```
 
 ### 6.2 路由守卫
+
 ```typescript
 // setup/routes.ts (添加路由守卫)
 function setupRouteGuards() {
@@ -386,12 +406,14 @@ function setupRouteGuards() {
           await store.loadPresentation(to.params.doc_id as string)
         }
         next()
-      } catch (error) {
+      }
+      catch (error) {
         // 加载失败，重定向到管理页面或错误页面
         console.error('Failed to load presentation:', error)
         next('/manage')
       }
-    } else {
+    }
+    else {
       next()
     }
   })
@@ -401,6 +423,7 @@ function setupRouteGuards() {
 ## 7. 现有组件改造
 
 ### 7.1 useNav Hook 改造
+
 ```typescript
 // composables/useNav.ts (关键修改)
 export function useNav(): SlidevContextNavFull {
@@ -419,9 +442,11 @@ export function useNav(): SlidevContextNavFull {
     const basePath = `/${docId.value}`
     if (exporting) {
       return `${basePath}/export/${no}`
-    } else if (presenter) {
+    }
+    else if (presenter) {
       return `${basePath}/presenter/${no}`
-    } else {
+    }
+    else {
       return `${basePath}/${no}`
     }
   }
@@ -452,6 +477,7 @@ export function useNav(): SlidevContextNavFull {
 ```
 
 ### 7.2 页面组件改造
+
 ```typescript
 // pages/play.vue (修改示例)
 <script setup lang="ts">
@@ -496,6 +522,7 @@ if (error.value) {
 ## 8. 数据兼容性处理
 
 ### 8.1 响应式数据适配
+
 ```typescript
 // logic/slides.ts (兼容性修改)
 import { useSlidesData } from '../composables/useSlidesData'
@@ -531,15 +558,18 @@ export function getSlidePath(
 
   if (exporting) {
     return `${basePath}/export/${no}`
-  } else if (presenter) {
+  }
+  else if (presenter) {
     return `${basePath}/presenter/${no}`
-  } else {
+  }
+  else {
     return `${basePath}/${no}`
   }
 }
 ```
 
 ### 8.2 全局状态修改
+
 ```typescript
 // env.ts (环境变量适配)
 export function useSlidesContext() {
@@ -561,6 +591,7 @@ export function useSlidesContext() {
 ## 9. 错误处理和加载状态
 
 ### 9.1 全局错误处理
+
 ```typescript
 // composables/useErrorHandler.ts
 export function useErrorHandler() {
@@ -573,10 +604,12 @@ export function useErrorHandler() {
     if (error.message.includes('404')) {
       // PPT 不存在，重定向到管理页面
       route.push('/manage')
-    } else if (error.message.includes('403')) {
+    }
+    else if (error.message.includes('403')) {
       // 权限不足，显示密码输入框
       // ... 处理逻辑
-    } else {
+    }
+    else {
       // 其他错误，显示错误页面
       route.push('/error')
     }
@@ -589,6 +622,7 @@ export function useErrorHandler() {
 ```
 
 ### 9.2 加载状态管理
+
 ```typescript
 // composables/useLoadingState.ts
 export function useLoadingState() {
@@ -611,16 +645,18 @@ export function useLoadingState() {
 ## 10. 迁移策略
 
 ### 10.1 渐进式迁移
+
 1. **第一阶段**：保持现有路由结构，添加新的 PPT 管理页面
 2. **第二阶段**：逐步迁移现有页面到新的路由结构
 3. **第三阶段**：完全移除旧的路由结构
 
 ### 10.2 向后兼容
+
 ```typescript
 // 兼容旧路由的重定向
 routes.push({
   path: '/:no',
-  redirect: to => {
+  redirect: (to) => {
     // 如果路径看起来像数字但没有文档 ID，重定向到管理页面
     if (/^\d+$/.test(to.params.no as string)) {
       return '/manage'
@@ -632,7 +668,7 @@ routes.push({
 
 routes.push({
   path: '/presenter/:no',
-  redirect: to => {
+  redirect: (to) => {
     return '/manage'
   }
 })
@@ -641,16 +677,19 @@ routes.push({
 ## 11. 测试策略
 
 ### 11.1 单元测试
+
 - API 客户端测试
 - 状态管理测试
 - 路由逻辑测试
 
 ### 11.2 集成测试
+
 - 端到端路由测试
 - 数据加载流程测试
 - 错误处理测试
 
 ### 11.3 Mock 数据
+
 ```typescript
 // mocks/presentation.ts
 export const mockPresentation: Presentation = {
@@ -676,6 +715,7 @@ export const mockSlides: SlideData[] = [
 ## 12. 性能优化
 
 ### 12.1 数据缓存
+
 ```typescript
 // 使用 Vue 的响应式系统进行缓存
 const presentationCache = new Map<string, Presentation>()
@@ -693,6 +733,7 @@ async function getCachedPresentation(docId: string) {
 ```
 
 ### 12.2 懒加载
+
 ```typescript
 // 幻灯片内容懒加载
 async function loadSlideContent(docId: string, slideNo: number) {

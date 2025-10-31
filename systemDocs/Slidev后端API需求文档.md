@@ -7,12 +7,14 @@
 ## 2. API 基础信息
 
 ### 2.1 基础配置
+
 - **Base URL**: `/api`
 - **协议**: HTTP/HTTPS
 - **数据格式**: JSON
 - **字符编码**: UTF-8
 
 ### 2.2 通用响应格式
+
 ```typescript
 interface APIResponse<T = any> {
   success: boolean
@@ -23,6 +25,7 @@ interface APIResponse<T = any> {
 ```
 
 ### 2.3 错误响应格式
+
 ```typescript
 interface ErrorResponse {
   success: false
@@ -41,26 +44,28 @@ interface ErrorResponse {
 **功能**: 获取用户可访问的所有演示文稿列表
 
 **查询参数**:
+
 ```typescript
 interface PresentationsQuery {
-  search?: string        // 搜索关键词
-  filter?: 'all' | 'recent'  // 过滤类型
-  sort?: 'title' | 'updated' | 'created' | 'opened'  // 排序字段
-  order?: 'asc' | 'desc'  // 排序方向
-  page?: number          // 页码（可选）
-  limit?: number         // 每页数量（可选）
+  search?: string // 搜索关键词
+  filter?: 'all' | 'recent' // 过滤类型
+  sort?: 'title' | 'updated' | 'created' | 'opened' // 排序字段
+  order?: 'asc' | 'desc' // 排序方向
+  page?: number // 页码（可选）
+  limit?: number // 每页数量（可选）
 }
 ```
 
 **后端实现逻辑**：
+
 ```typescript
 async function getDocuments(req: Request) {
   const { search, filter, sort, order } = req.query
 
-  let documents = await documentService.findByUserId(req.user.id)
+  const documents = await documentService.findByUserId(req.user.id)
 
   // 使用 @slidev/parser 解析内容获取元数据
-  const presentations = documents.map(doc => {
+  const presentations = documents.map((doc) => {
     const parsed: SlidevMarkdown = parseSync(doc.content, 'temp.md')
     const firstSlide = parsed.slides[0]
 
@@ -81,6 +86,7 @@ async function getDocuments(req: Request) {
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -90,11 +96,11 @@ async function getDocuments(req: Request) {
         "id": "1",
         "title": "Vue 3 最佳实践",
         "description": "关于 Vue 3 开发的最佳实践分享",
-    "thumbnail": "/api/documents/1/thumbnail",
-    "slideCount": 15,
-    "createdAt": "2024-01-15T00:00:00Z",
-    "updatedAt": "2024-01-20T00:00:00Z",
-    "lastOpened": "2024-01-25T00:00:00Z"
+        "thumbnail": "/api/documents/1/thumbnail",
+        "slideCount": 15,
+        "createdAt": "2024-01-15T00:00:00Z",
+        "updatedAt": "2024-01-20T00:00:00Z",
+        "lastOpened": "2024-01-25T00:00:00Z"
       }
     ],
     "total": 1,
@@ -111,11 +117,13 @@ async function getDocuments(req: Request) {
 **功能**: 获取指定演示文稿的详细信息
 
 **后端实现逻辑**：
+
 ```typescript
 async function getDocument(req: Request) {
   const document = await documentService.findById(req.params.id)
 
-  if (!document) throw new NotFoundError('文档不存在')
+  if (!document)
+    throw new NotFoundError('文档不存在')
 
   // 使用 @slidev/parser 解析
   const parsed: SlidevMarkdown = parseSync(document.content, 'temp.md')
@@ -145,6 +153,7 @@ async function getDocument(req: Request) {
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -176,6 +185,7 @@ async function getDocument(req: Request) {
 **功能**: 删除指定的演示文稿
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -198,13 +208,15 @@ async function getDocument(req: Request) {
 **功能**: 获取演示文稿的预览数据（前几页）
 
 **查询参数**:
+
 ```typescript
 interface PreviewQuery {
-  count?: number  // 预览页数，默认3页
+  count?: number // 预览页数，默认3页
 }
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -232,20 +244,23 @@ interface PreviewQuery {
 **功能**: 获取指定幻灯片的详细信息
 
 **路径参数**:
+
 - `doc_id`: 文档ID
 - `slide_no`: 幻灯片编号
 
 **后端实现逻辑**：
+
 ```typescript
 async function getSlide(req: Request) {
   const { doc_id, slide_no } = req.params
 
   const document = await documentService.findById(doc_id)
-  if (!document) throw new NotFoundError('文档不存在')
+  if (!document)
+    throw new NotFoundError('文档不存在')
 
   // 使用 @slidev/parser 解析
   const parsed: SlidevMarkdown = parseSync(document.content, 'temp.md')
-  const slideIndex = parseInt(slide_no) - 1
+  const slideIndex = Number.parseInt(slide_no) - 1
 
   if (slideIndex < 0 || slideIndex >= parsed.slides.length) {
     throw new NotFoundError('幻灯片不存在')
@@ -266,6 +281,7 @@ async function getSlide(req: Request) {
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -290,6 +306,7 @@ async function getSlide(req: Request) {
 **功能**: 更新指定幻灯片的内容
 
 **请求体**:
+
 ```json
 {
   "content": "# 更新后的标题\n\n更新后的内容",
@@ -303,6 +320,7 @@ async function getSlide(req: Request) {
 ```
 
 **后端实现逻辑**：
+
 ```typescript
 // 使用 @slidev/parser 的 SlidePatch 类型
 import type { SlidePatch } from '@slidev/parser/core'
@@ -323,7 +341,8 @@ async function updateSlide(docId: string, slideNo: number, patch: SlidePatch) {
     if (patch.frontmatterRaw.trim() === '') {
       slide.frontmatterDoc = slide.frontmatterStyle = undefined
       slide.frontmatter = {}
-    } else {
+    }
+    else {
       const parsed = YAML.parseDocument(patch.frontmatterRaw)
       if (parsed.errors.length > 0) {
         throw new ValidationError('frontmatter 格式错误')
@@ -359,6 +378,7 @@ async function updateSlide(docId: string, slideNo: number, patch: SlidePatch) {
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -384,11 +404,13 @@ async function updateSlide(docId: string, slideNo: number, patch: SlidePatch) {
 **功能**: 获取文档的所有幻灯片列表
 
 **后端实现逻辑**：
+
 ```typescript
 async function getDocumentSlides(docId: string) {
   const document = await documentService.findById(docId)
 
-  if (!document) throw new NotFoundError('文档不存在')
+  if (!document)
+    throw new NotFoundError('文档不存在')
 
   // 使用 @slidev/parser 直接解析
   const slidesData: SlidevMarkdown = parseSync(document.content, 'temp.md')
@@ -404,6 +426,7 @@ async function getDocumentSlides(docId: string) {
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -438,6 +461,7 @@ async function getDocumentSlides(docId: string) {
 **功能**: 批量更新多个幻灯片，更新整个文档内容
 
 **请求体**:
+
 ```json
 {
   "slides": [
@@ -464,6 +488,7 @@ async function getDocumentSlides(docId: string) {
 ```
 
 **后端实现逻辑**：
+
 ```typescript
 async function updateSlides(docId: string, slides: SlideUpdate[], currentRevision: string) {
   const document = await documentService.findById(docId)
@@ -530,6 +555,7 @@ async function updateSlides(docId: string, slides: SlideUpdate[], currentRevisio
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -562,6 +588,7 @@ async function updateSlides(docId: string, slides: SlideUpdate[], currentRevisio
 **功能**: 创建新的演示文稿文档
 
 **请求体**:
+
 ```json
 {
   "title": "新演示文稿",
@@ -571,6 +598,7 @@ async function updateSlides(docId: string, slides: SlideUpdate[], currentRevisio
 ```
 
 **后端实现逻辑**：
+
 ```typescript
 async function createDocument(req: Request) {
   const { title, description, content } = req.body
@@ -585,7 +613,7 @@ async function createDocument(req: Request) {
   const document = await documentService.create({
     title,
     description,
-    content: stringify(parsedSlides),  // 使用 core 的 stringify
+    content: stringify(parsedSlides), // 使用 core 的 stringify
     revision,
     userId: req.user.id
   })
@@ -595,6 +623,7 @@ async function createDocument(req: Request) {
 ```
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -614,6 +643,7 @@ async function createDocument(req: Request) {
 **功能**: 更新文档的基本信息
 
 **请求体**:
+
 ```json
 {
   "title": "更新后的标题",
@@ -628,6 +658,7 @@ async function createDocument(req: Request) {
 **功能**: 复制现有文档
 
 **请求体**:
+
 ```json
 {
   "title": "复制的演示文稿"
@@ -643,6 +674,7 @@ async function createDocument(req: Request) {
 **功能**: 获取当前用户信息
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -662,6 +694,7 @@ async function createDocument(req: Request) {
 **功能**: 记录文档打开时间，用于"最近使用"排序
 
 **响应示例**:
+
 ```json
 {
   "success": true,
@@ -674,8 +707,9 @@ async function createDocument(req: Request) {
 ### 7.1 数据库设计 (TypeORM + SQLite)
 
 **Document 实体定义**：
+
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
 @Entity()
 export class Document {
@@ -689,7 +723,7 @@ export class Document {
   description: string
 
   @Column({ type: 'text' })
-  content: string              // 完整的 Markdown 内容（所有幻灯片）
+  content: string // 完整的 Markdown 内容（所有幻灯片）
 
   @Column({ type: 'varchar', length: 50 })
   userId: string
@@ -698,7 +732,7 @@ export class Document {
   thumbnailUrl: string
 
   @Column({ type: 'varchar', length: 50, default: '1' })
-  revision: string             // 版本号，用于并发控制
+  revision: string // 版本号，用于并发控制
 
   @CreateDateColumn()
   createdAt: Date
@@ -715,8 +749,9 @@ export class Document {
 ```
 
 **User 实体定义**：
+
 ```typescript
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm'
 
 @Entity()
 export class User {
@@ -740,6 +775,7 @@ export class User {
 ### 7.2 JSON 内容格式说明
 
 **完整文档存储格式**：
+
 ```json
 {
   "id": "doc_123",
@@ -761,7 +797,7 @@ export class User {
 
 ```typescript
 // 导入 @slidev/parser 核心方法
-import { parse, stringify, parseSlide, prettifySlide, SlidevMarkdown, SourceSlideInfo } from '@slidev/parser/core'
+import { parse, parseSlide, prettifySlide, SlidevMarkdown, SourceSlideInfo, stringify } from '@slidev/parser/core'
 
 // 解析完整 Markdown 为幻灯片数组
 const slidesData: SlidevMarkdown = await parse(markdownContent, 'temp.md')
@@ -805,9 +841,12 @@ async function updateSlide(docId: string, slideNo: number, patch: SlidePatch) {
   const slide = slidesData.slides[slideNo - 1]
 
   // 应用修改
-  if (patch.content !== undefined) slide.content = patch.content
-  if (patch.note !== undefined) slide.note = patch.note
-  if (patch.frontmatter) Object.assign(slide.frontmatter, patch.frontmatter)
+  if (patch.content !== undefined)
+    slide.content = patch.content
+  if (patch.note !== undefined)
+    slide.note = patch.note
+  if (patch.frontmatter)
+    Object.assign(slide.frontmatter, patch.frontmatter)
 
   // 格式化并重新序列化
   prettifySlide(slide)
@@ -824,6 +863,7 @@ async function updateSlide(docId: string, slideNo: number, patch: SlidePatch) {
 ### 7.3 数据库配置
 
 **TypeORM 配置示例**：
+
 ```typescript
 import { DataSource } from 'typeorm'
 import { Document } from './entities/Document'
@@ -839,6 +879,7 @@ export const AppDataSource = new DataSource({
 ```
 
 **数据库服务示例**：
+
 ```typescript
 import { Repository } from 'typeorm'
 import { AppDataSource } from '../config/database'
@@ -882,6 +923,7 @@ export class DocumentService {
 ## 8. 技术实现要求
 
 ### 8.1 后端技术栈
+
 - **语言**: Node.js / TypeScript
 - **框架**: Express.js
 - **数据库**: SQLite
@@ -889,11 +931,13 @@ export class DocumentService {
 - **Markdown 处理**: `@slidev/parser` - Slidev 官方解析库
 
 ### 8.2 认证授权
+
 - 使用 JWT Token 进行用户认证
 - 支持基于角色的权限控制 (RBAC)
 - API 密钥管理
 
 ### 8.3 内容处理
+
 - **Markdown 解析和处理**: 直接使用 `@slidev/parser` 库的核心方法
   - `parse()` - 解析完整 Markdown 为幻灯片对象
   - `stringify()` - 将幻灯片对象序列化回 Markdown
@@ -903,6 +947,7 @@ export class DocumentService {
 - 图片处理和存储
 
 ### 8.4 性能要求
+
 - API 响应时间 < 200ms
 - 支持 1000+ 并发用户
 - 数据库查询优化
@@ -910,6 +955,7 @@ export class DocumentService {
 ## 9. 错误处理
 
 ### 9.1 HTTP 状态码
+
 - `200` - 成功
 - `201` - 创建成功
 - `400` - 请求参数错误
@@ -920,6 +966,7 @@ export class DocumentService {
 - `500` - 服务器内部错误
 
 ### 9.2 错误码定义
+
 ```typescript
 enum ErrorCode {
   // 通用错误
@@ -947,17 +994,20 @@ enum ErrorCode {
 ## 10. 安全要求
 
 ### 10.1 输入验证
+
 - 所有输入参数必须进行验证
 - 防止 SQL 注入和 XSS 攻击
 - 图片上传安全检查
 - 内容安全过滤
 
 ### 10.2 权限控制
+
 - 用户只能访问自己的文档
 - API 接口权限验证
 - 敏感操作日志记录
 
 ### 10.3 数据保护
+
 - 敏感数据加密存储
 - HTTPS 强制使用
 - 定期数据备份
@@ -965,16 +1015,19 @@ enum ErrorCode {
 ## 11. 部署要求
 
 ### 11.1 环境配置
+
 - 开发环境 (development)
 - 测试环境 (staging)
 - 生产环境 (production)
 
 ### 11.2 监控和日志
+
 - API 请求日志
 - 错误监控和报警
 - 性能指标监控
 
 ### 11.3 扩展性
+
 - 支持水平扩展
 - 数据库读写分离
 - CDN 缓存支持
@@ -982,16 +1035,19 @@ enum ErrorCode {
 ## 12. 开发计划
 
 ### 12.1 第一阶段 (基础功能)
+
 - PPT 管理相关 API
 - 用户认证
 - 基础权限控制
 
 ### 12.2 第二阶段 (编辑功能)
+
 - 幻灯片编辑 API
 - 实时保存
 - 冲突处理
 
 ### 12.3 第三阶段 (高级功能)
+
 - 协作编辑
 - 版本控制
 - 高级搜索

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core'
 import { nextTick } from 'vue'
-import { bitRate, frameRate, getFilename, mimeType, recordCamera, recorder, recordingName, resolution } from '../logic/recording'
+import { bitRate, frameRate, getFilename, mimeType, recordCamera, recorder, recordingName, recordSystemAudio, resolution } from '../logic/recording'
 import DevicesSelectors from './DevicesSelectors.vue'
 import Modal from './Modal.vue'
 
@@ -109,6 +109,15 @@ async function start() {
             type="checkbox"
           >
           <label for="record-camera" @click="recordCamera = !recordCamera">Record camera separately</label>
+        </div>
+
+        <div class="form-check">
+          <input
+            v-model="recordSystemAudio"
+            name="record-system-audio"
+            type="checkbox"
+          >
+          <label for="record-system-audio" @click="recordSystemAudio = !recordSystemAudio">Record system audio</label>
         </div>
 
         <div class="text-xs w-full opacity-50">

@@ -11,6 +11,7 @@ type MimeType = Defined<RecorderOptions['mimeType']>
 
 export const recordingName = ref('')
 export const recordCamera = ref(true)
+export const recordSystemAudio = useLocalStorage<boolean>('slidev-record-system-audio', true)
 export const mimeType = useLocalStorage<MimeType>('slidev-record-mimetype', 'video/webm')
 export const frameRate = useLocalStorage<number>('slidev-record-framerate', 30)
 export const bitRate = useLocalStorage<number>('slidev-record-bitrate', 8192)
@@ -154,6 +155,14 @@ export function useRecording() {
         cursor: 'motion',
         resizeMode: 'crop-and-scale',
       },
+      // @ts-expect-error missing types
+      audio: recordSystemAudio.value
+        ? {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+          }
+        : false,
       selfBrowserSurface: 'include',
     })
     streamCapture.value.addEventListener('inactive', stopRecording)
@@ -162,14 +171,25 @@ export function useRecording() {
     streamSlides.value = new MediaStream()
     streamCapture.value!.getVideoTracks().forEach(videoTrack => streamSlides.value!.addTrack(videoTrack))
 
+    // Add system audio from screen capture if available
+    const systemAudioTracks = streamCapture.value!.getAudioTracks()
+    if (systemAudioTracks.length > 0) {
+      systemAudioTracks.forEach(audioTrack => streamSlides.value!.addTrack(audioTrack))
+    }
+
+    // Add microphone audio if available
+    // Note: When both system audio and mic audio are present, the browser/RecordRTC will mix them
+    if (streamCamera.value) {
+      const micAudioTrack = streamCamera.value!.getAudioTracks()?.[0]
+      if (micAudioTrack) {
+        streamSlides.value!.addTrack(micAudioTrack)
+      }
+    }
+
     // merge config
     Object.assign(config, customConfig)
 
     if (streamCamera.value) {
-      const audioTrack = streamCamera.value!.getAudioTracks()?.[0]
-      if (audioTrack)
-        streamSlides.value!.addTrack(audioTrack)
-
       recorderCamera.value = new Recorder(
         streamCamera.value!,
         config,
