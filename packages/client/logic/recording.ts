@@ -11,6 +11,7 @@ type MimeType = Defined<RecorderOptions['mimeType']>
 
 export const recordingName = ref('')
 export const recordCamera = ref(true)
+export const recordBrowserAudio = useLocalStorage('slidev-record-browser-audio', true)
 export const mimeType = useLocalStorage<MimeType>('slidev-record-mimetype', 'video/webm')
 export const frameRate = useLocalStorage<number>('slidev-record-framerate', 30)
 export const bitRate = useLocalStorage<number>('slidev-record-bitrate', 8192)
@@ -32,6 +33,20 @@ export function getFilename(media?: string, mimeType?: string) {
   const ext = mimeType ? mimeExtMap[mimeType] : 'webm'
 
   return `${[media, recordingName.value, date].filter(isTruthy).join('-')}.${ext}`
+}
+
+// 检测浏览器音频录制支持
+export function isBrowserAudioSupported() {
+  // 检查是否支持 getDisplayMedia 的音频选项
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    return false
+  }
+
+  // Chrome 和 Edge 支持较好
+  const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor)
+  const isEdge = /Edg/.test(navigator.userAgent)
+
+  return isChrome || isEdge
 }
 
 function getSupportedMimeTypes() {
@@ -144,7 +159,9 @@ export function useRecording() {
     await startCameraStream()
 
     const [width, height] = resolution.value.split('x').map(Number)
-    streamCapture.value = await navigator.mediaDevices.getDisplayMedia({
+
+    // 构建显示媒体配置
+    const displayMediaOptions: DisplayMediaStreamOptions = {
       video: {
         // aspectRatio: 1.6,
         frameRate: frameRate.value,
@@ -155,21 +172,51 @@ export function useRecording() {
         resizeMode: 'crop-and-scale',
       },
       selfBrowserSurface: 'include',
-    })
+    }
+
+    // 如果启用浏览器音频录制，添加音频配置
+    if (recordBrowserAudio.value) {
+      displayMediaOptions.audio = {
+        // @ts-expect-error experimental API
+        suppressLocalAudioPlayback: false,
+      }
+    }
+
+    streamCapture.value = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
     streamCapture.value.addEventListener('inactive', stopRecording)
 
     // We need to create a new Stream to merge video and audio to have the inactive event working on streamCapture
     streamSlides.value = new MediaStream()
     streamCapture.value!.getVideoTracks().forEach(videoTrack => streamSlides.value!.addTrack(videoTrack))
 
+    // 处理音频轨道 - 优先使用浏览器音频，否则使用麦克风音频
+    let audioTrack: MediaStreamTrack | undefined
+
+    // 首先尝试从屏幕捕获流中获取音频（浏览器音频）
+    if (recordBrowserAudio.value) {
+      const systemAudioTracks = streamCapture.value!.getAudioTracks()
+      if (systemAudioTracks.length > 0) {
+        audioTrack = systemAudioTracks[0]
+      }
+    }
+
+    // 如果没有浏览器音频，尝试使用麦克风音频
+    if (!audioTrack && streamCamera.value) {
+      const micAudioTracks = streamCamera.value!.getAudioTracks()
+      if (micAudioTracks.length > 0) {
+        audioTrack = micAudioTracks[0]
+      }
+    }
+
+    // 将音频轨道添加到幻灯片录制流
+    if (audioTrack) {
+      streamSlides.value!.addTrack(audioTrack)
+    }
+
     // merge config
     Object.assign(config, customConfig)
 
-    if (streamCamera.value) {
-      const audioTrack = streamCamera.value!.getAudioTracks()?.[0]
-      if (audioTrack)
-        streamSlides.value!.addTrack(audioTrack)
-
+    if (streamCamera.value && recordCamera.value) {
       recorderCamera.value = new Recorder(
         streamCamera.value!,
         config,

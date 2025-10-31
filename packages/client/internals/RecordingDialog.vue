@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useVModel } from '@vueuse/core'
-import { nextTick } from 'vue'
-import { bitRate, frameRate, getFilename, mimeType, recordCamera, recorder, recordingName, resolution } from '../logic/recording'
+import { computed, nextTick } from 'vue'
+import { bitRate, frameRate, getFilename, isBrowserAudioSupported, mimeType, recordBrowserAudio, recordCamera, recorder, recordingName, resolution } from '../logic/recording'
 import DevicesSelectors from './DevicesSelectors.vue'
 import Modal from './Modal.vue'
 
@@ -19,6 +19,7 @@ const value = useVModel(props, 'modelValue', emit)
 const { startRecording } = recorder
 
 const frameRateOptions = [15, 24, 30, 60]
+const browserAudioSupported = computed(() => isBrowserAudioSupported())
 const resolutionOptions = [
   { value: '1280x720', label: '720p (1280x720)' },
   { value: '1920x1080', label: '1080p (1920x1080)' },
@@ -100,6 +101,19 @@ async function start() {
             >
             <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-sm opacity-50">kbps</span>
           </div>
+        </div>
+
+        <div class="form-check">
+          <input
+            v-model="recordBrowserAudio"
+            name="record-browser-audio"
+            type="checkbox"
+            :disabled="!browserAudioSupported"
+          >
+          <label for="record-browser-audio" @click="browserAudioSupported && (recordBrowserAudio = !recordBrowserAudio)">
+            Record browser audio
+            <span v-if="!browserAudioSupported" class="text-xs opacity-50 block">(Chrome/Edge only)</span>
+          </label>
         </div>
 
         <div class="form-check">
