@@ -2,26 +2,33 @@
 import type { SlideRoute } from '@slidev/types'
 import { useHead } from '@unhead/vue'
 import { useLocalStorage } from '@vueuse/core'
-import { nextTick, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onMounted, reactive, ref } from 'vue'
 import { createFixedClicks } from '../composables/useClicks'
 import { useNav } from '../composables/useNav'
+import { useDynamicSlideInfo } from '../composables/useSlideInfo'
 import { CLICKS_MAX } from '../constants'
 import { slidesTitle } from '../env'
+import { editorHeight, editorWidth, isEditorVertical, showEditor } from '../state'
 import IconButton from '../internals/IconButton.vue'
 import NoteDisplay from '../internals/NoteDisplay.vue'
+import NoteEditable from '../internals/NoteEditable.vue'
 import SlideContainer from '../internals/SlideContainer.vue'
 import SlideWrapper from '../internals/SlideWrapper.vue'
 import { isColorSchemaConfigured, isDark, toggleDark } from '../logic/dark'
+import ClicksSlider from '../internals/ClicksSlider.vue'
+import SideEditor from '../internals/SideEditor.vue'
 
 // 文章阅读宽度
 const articleWidth = 800
 
 useHead({ title: `Article - ${slidesTitle}` })
 
-const { slides } = useNav()
+const { slides, openInEditor } = useNav()
 
 const blocks: Map<number, HTMLElement> = reactive(new Map())
 const activeSlideNo = ref(1)
+const editorSlideNo = ref(1) // 编辑器当前显示的幻灯片编号
+const edittingNote = ref<number | null>(null) // 参考 overview 页面
 const fontSize = useLocalStorage('slidev-article-font-size', 16)
 
 // 为每个幻灯片创建独立的点击上下文
@@ -30,6 +37,22 @@ function getClicksContext(route: SlideRoute) {
   if (!clicksContextMap.has(route))
     clicksContextMap.set(route, createFixedClicks(route, CLICKS_MAX))
   return clicksContextMap.get(route)!
+}
+
+// 获取幻灯片的点击次数
+function getSlideClicks(route: SlideRoute) {
+  return route.meta?.clicks || getClicksContext(route)?.total
+}
+
+// 参考 overview 页面的方法，直接为每个幻灯片创建 useDynamicSlideInfo
+const slideInfoMap = new Map<number, ReturnType<typeof useDynamicSlideInfo>>()
+
+function getSlideInfo(route: SlideRoute) {
+  if (!slideInfoMap.has(route.no)) {
+    const info = useDynamicSlideInfo(route.no)
+    slideInfoMap.set(route.no, info)
+  }
+  return slideInfoMap.get(route.no)!
 }
 
 // 检测哪个幻灯片在视口中
@@ -57,14 +80,18 @@ function scrollToSlide(idx: number) {
     el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
-// 字号调整
-function increaseFontSize() {
-  fontSize.value = Math.min(24, fontSize.value + 1)
+// 处理点击幻灯片打开编辑器
+function onSlideClick(route: SlideRoute) {
+  // 设置当前幻灯片为活动状态
+  activeSlideNo.value = route.no
+  // 设置编辑器显示的幻灯片
+  editorSlideNo.value = route.no
+  // 显示编辑器
+  showEditor.value = true
+  // 滚动到对应幻灯片
+  scrollToSlide(route.no - 1)
 }
 
-function decreaseFontSize() {
-  fontSize.value = Math.max(12, fontSize.value - 1)
-}
 
 onMounted(() => {
   nextTick(() => {
@@ -87,8 +114,8 @@ onMounted(() => {
           <button
             class="relative transition duration-300 w-10 h-10 rounded-full hover:bg-active hover:op100 my-0.5"
             :class="activeSlideNo === idx + 1 ? 'op100 text-primary bg-primary/10 font-bold' : 'op40'"
-            :title="`Slide ${idx + 1}${route.meta?.slide?.title ? `: ${route.meta.slide.title}` : ''}`"
-            @click="scrollToSlide(idx)"
+            :title="`幻灯片 ${idx + 1}${route.meta?.slide?.title ? `: ${route.meta.slide.title}` : ''}`"
+            @click="onSlideClick(route)"
           >
             {{ idx + 1 }}
           </button>
@@ -99,23 +126,18 @@ onMounted(() => {
       <div class="border-t border-main p-2 flex flex-col gap-1">
         <IconButton
           v-if="!isColorSchemaConfigured"
-          :title="isDark ? 'Switch to light mode theme' : 'Switch to dark mode theme'"
+          :title="isDark ? '切换到浅色模式' : '切换到深色模式'"
           @click="toggleDark()"
         >
           <carbon-moon v-if="isDark" />
           <carbon-sun v-else />
         </IconButton>
-        <IconButton title="Increase font size" @click="increaseFontSize">
-          <div class="i-carbon:zoom-in" />
-        </IconButton>
-        <IconButton title="Decrease font size" @click="decreaseFontSize">
-          <div class="i-carbon:zoom-out" />
-        </IconButton>
+    
       </div>
     </nav>
 
     <!-- 主内容区域 -->
-    <main class="flex-1 ml-14 overflow-y-auto">
+    <main class="flex-1 ml-14 overflow-y-auto" :class="showEditor ? 'mr-18' : ''">
       <div class="max-w-full flex flex-col items-center py-10 px-4">
         <!-- 标题区域 -->
         <div class="w-full mb-10 text-center" :style="{ maxWidth: `${articleWidth}px` }">
@@ -123,7 +145,7 @@ onMounted(() => {
             {{ slidesTitle }}
           </h1>
           <div class="text-sm op50">
-            {{ slides.length }} slides
+            共 {{ slides.length }} 页幻灯片
           </div>
         </div>
 
@@ -149,8 +171,14 @@ onMounted(() => {
 
             <!-- 幻灯片预览 -->
             <div
-              class="border rounded-lg border-main overflow-hidden bg-main mb-6 shadow-lg"
+              class="border rounded-lg border-main overflow-hidden bg-main mb-6 shadow-lg cursor-pointer hover:border-primary transition-all"
+              :class="[
+                activeSlideNo === route.no ? 'border-primary ring-2 ring-primary/20' : '',
+                showEditor && activeSlideNo === route.no ? 'scale-105 shadow-xl' : ''
+              ]"
               :style="{ width: '100%' }"
+              @click="onSlideClick(route)"
+              title="点击打开编辑器"
             >
               <SlideContainer
                 :key="route.no"
@@ -165,25 +193,59 @@ onMounted(() => {
               </SlideContainer>
             </div>
 
-            <!-- 注释内容 -->
-            <div
-              v-if="route.meta?.slide?.note || route.meta?.slide?.noteHTML"
-              class="prose dark:prose-invert max-w-none"
-              :style="{ fontSize: `${fontSize}px` }"
-            >
-              <NoteDisplay
-                :note="route.meta.slide.note"
-                :note-html="route.meta.slide.noteHTML"
+            <!-- Clicks 控制器 -->
+            <div v-if="getSlideClicks(route)" class="mb-6">
+              <ClicksSlider
                 :clicks-context="getClicksContext(route)"
-                :placeholder="`No notes for slide ${idx + 1}`"
+                :active="true"
+                class="w-full"
               />
             </div>
+
+            <!-- 注释内容 -->
+            <div class="flex gap-4">
+              <div
+                v-if="getSlideInfo(route).info.value?.note || route.meta?.slide?.noteHTML || edittingNote === route.no"
+                class="flex-1 prose dark:prose-invert max-w-none"
+                :style="{ fontSize: `${fontSize}px` }"
+              >
+                <!-- 如果正在编辑，使用 NoteEditable，否则使用 NoteDisplay -->
+                <NoteEditable
+                  v-if="edittingNote === route.no"
+                  :no="route.no"
+                  :auto-height="true"
+                  :highlight="true"
+                  :editing="edittingNote === route.no"
+                  :clicks-context="getClicksContext(route)"
+                  :placeholder="`幻灯片 ${idx + 1} 没有注释`"
+                  @update:editing="edittingNote = null"
+                />
+                <NoteDisplay
+                  v-else
+                  :note="getSlideInfo(route).info.value?.note"
+                  :note-html="route.meta.slide.noteHTML"
+                  :clicks-context="getClicksContext(route)"
+                  :placeholder="`幻灯片 ${idx + 1} 没有注释`"
+                />
+              </div>
+              <!-- 编辑按钮 -->
+              <div class="py3 mt-0.5 mr--8 ml--4 op0 transition group-hover:op100">
+                <IconButton
+                  title="Edit Note"
+                  class="rounded-full w-9 h-9 text-sm"
+                  :class="edittingNote === route.no ? 'important:op0' : ''"
+                  @click="edittingNote = route.no"
+                >
+                  <div class="i-carbon:pen" />
+                </IconButton>
+              </div>
+            </div>
             <div
-              v-else
+              v-if="!getSlideInfo(route).info.value?.note && !route.meta?.slide?.noteHTML && edittingNote !== route.no"
               class="text-center py-8 op30 italic"
               :style="{ fontSize: `${fontSize}px` }"
             >
-              No notes for this slide
+              幻灯片 {{ idx + 1 }} 没有注释
             </div>
 
             <!-- 分隔线 -->
@@ -197,16 +259,23 @@ onMounted(() => {
             ✨
           </div>
           <div class="text-sm">
-            End of presentation
+            演示文稿结束
           </div>
         </div>
       </div>
-    </main>
+      </main>
 
     <!-- 进度指示器 -->
     <div
       class="fixed top-0 left-14 right-0 h-1 bg-primary transition-all z-20"
       :style="{ width: `${(activeSlideNo / slides.length) * 100}%` }"
+    />
+
+    <!-- SideEditor 组件 -->
+    <SideEditor
+      v-if="showEditor"
+      :resize="true"
+      :slide-no="editorSlideNo"
     />
   </div>
 </template>

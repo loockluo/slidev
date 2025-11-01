@@ -9,16 +9,21 @@ import ShikiEditor from './ShikiEditor.vue'
 
 const props = defineProps<{
   resize?: boolean
+  slideNo?: number
 }>()
 
+
 const { currentSlideNo, openInEditor } = useNav()
+
+// 使用传入的 slideNo 或使用全局的 currentSlideNo
+const effectiveSlideNo = computed(() => props.slideNo ?? currentSlideNo.value)
 
 const tab = ref<'content' | 'note'>('content')
 const content = ref('')
 const note = ref('')
 const dirty = ref(false)
 
-const { info, update } = useDynamicSlideInfo(currentSlideNo)
+const { info, update } = useDynamicSlideInfo(effectiveSlideNo)
 
 watch(
   info,
@@ -47,11 +52,13 @@ async function save() {
     content: contentOnly,
     frontmatterRaw,
   })
-}
+
+  }
 
 function close() {
   showEditor.value = false
 }
+
 
 useEventListener('keydown', (e) => {
   if (activeElement.value?.tagName === 'TEXTAREA' && e.code === 'KeyS' && (e.ctrlKey || e.metaKey)) {

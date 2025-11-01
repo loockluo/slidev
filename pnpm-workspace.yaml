@@ -6,13 +6,6 @@ packages:
   - course
   - background
 
-shamefullyHoist: true
-ignoreWorkspaceRootCheck: true
-strictPeerDependencies: false
-linkWorkspacePackages: true
-
-patchedDependencies:
-  '@hedgedoc/markdown-it-plugins@2.1.4': patches/@hedgedoc__markdown-it-plugins@2.1.4.patch
 catalog:
   '@types/bcryptjs': ^3.0.0
   '@types/cors': ^0.0.0
@@ -37,6 +30,7 @@ catalog:
   ts-jest: ^0.0.0
   typeorm: ^0.0.0
   winston: ^0.0.0
+
 catalogs:
   demo:
     '@vue/compiler-sfc': ^3.5.22
@@ -185,6 +179,11 @@ catalogs:
     ts-json-schema-generator: ^2.4.0
     volar-service-prettier: ^0.0.64
     volar-service-yaml: ^0.0.64
+
+ignoreWorkspaceRootCheck: true
+
+linkWorkspacePackages: true
+
 onlyBuiltDependencies:
   - '@vscode/vsce-sign'
   - cypress
@@ -193,3 +192,11 @@ onlyBuiltDependencies:
   - playwright-chromium
   - typeit
   - unrs-resolver
+  - vue-demi
+
+patchedDependencies:
+  '@hedgedoc/markdown-it-plugins@2.1.4': patches/@hedgedoc__markdown-it-plugins@2.1.4.patch
+
+shamefullyHoist: true
+
+strictPeerDependencies: false

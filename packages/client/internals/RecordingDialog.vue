@@ -44,26 +44,26 @@ async function start() {
 <template>
   <Modal v-model="value" class="px-6 py-4 recording-dialog flex flex-col gap-2">
     <div class="flex gap-2 text-xl">
-      <div class="i-carbon:video my-auto" />Recording
+      <div class="i-carbon:video my-auto" />录制设置
     </div>
     <div class="grid grid-cols-2 gap-4">
       <div class="flex flex-col gap-2 py-2">
         <div class="form-text">
-          <label for="title">Recording Name</label>
+          <label for="title">录制名称</label>
           <input
             v-model="recordingName"
             class="bg-transparent text-current"
             name="title"
             type="text"
-            placeholder="Enter the title..."
+            placeholder="输入录制名称..."
           >
           <div class="text-xs w-full opacity-50 py-2">
-            <div>This will be used in the output filename that might <br>help you better organize your recording chips.</div>
+            <div>这将用于输出文件名，<br>帮助您更好地组织录制文件。</div>
           </div>
         </div>
 
         <div class="form-text">
-          <label for="framerate">Frame Rate</label>
+          <label for="framerate">帧率</label>
           <select
             v-model="frameRate"
             class="bg-transparent text-current border border-main rounded px-2 py-1"
@@ -76,7 +76,7 @@ async function start() {
         </div>
 
         <div class="form-text">
-          <label for="resolution">Resolution</label>
+          <label for="resolution">分辨率</label>
           <select
             v-model="resolution"
             class="bg-transparent text-current border border-main rounded px-2 py-1"
@@ -89,7 +89,7 @@ async function start() {
         </div>
 
         <div class="form-text">
-          <label for="bitrate">Bitrate</label>
+          <label for="bitrate">比特率</label>
           <div class="relative">
             <input
               v-model.number="bitRate"
@@ -111,8 +111,8 @@ async function start() {
             :disabled="!browserAudioSupported"
           >
           <label for="record-browser-audio" @click="browserAudioSupported && (recordBrowserAudio = !recordBrowserAudio)">
-            Record browser audio
-            <span v-if="!browserAudioSupported" class="text-xs opacity-50 block">(Chrome/Edge only)</span>
+            录制浏览器音频
+            <span v-if="!browserAudioSupported" class="text-xs opacity-50 block">(仅支持 Chrome/Edge)</span>
           </label>
         </div>
 
@@ -122,12 +122,12 @@ async function start() {
             name="record-camera"
             type="checkbox"
           >
-          <label for="record-camera" @click="recordCamera = !recordCamera">Record camera separately</label>
+          <label for="record-camera" @click="recordCamera = !recordCamera">单独录制摄像头</label>
         </div>
 
         <div class="text-xs w-full opacity-50">
           <div class="mt-2 opacity-50">
-            Enumerated filenames
+            生成的文件名
           </div>
           <div class="font-mono">
             {{ getFilename('screen', mimeType) }}
@@ -141,11 +141,11 @@ async function start() {
     </div>
     <div class="flex my-1">
       <button class="slidev-form-button" @click="close">
-        Cancel
+        取消
       </button>
       <div class="flex-auto" />
       <button class="slidev-form-button primary" @click="start">
-        Start
+        开始录制
       </button>
     </div>
   </Modal>

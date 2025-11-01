@@ -38,7 +38,7 @@ onMounted(() => {
     v-if="currentCamera !== 'none'"
     class="<md:hidden"
     :class="{ 'text-green-500': Boolean(showAvatar && streamCamera) }"
-    title="Toggle camera view"
+    title="切换摄像头视图"
     @click="toggleAvatar"
   >
     <div class="i-carbon:user-avatar" />
@@ -46,7 +46,7 @@ onMounted(() => {
 
   <IconButton
     :class="{ 'text-red-500': recording }"
-    :title="recording ? 'Stop record video' : 'Record video'"
+    :title="recording ? '停止录制' : '开始录制'"
     @click="toggleRecording"
   >
     <div v-if="recording" class="i-carbon:stop-outline" />
@@ -54,7 +54,7 @@ onMounted(() => {
   </IconButton>
   <MenuButton :disabled="recording">
     <template #button>
-      <IconButton title="Select recording device" class="h-full !text-sm !px-0 aspect-initial">
+      <IconButton title="选择录制设备" class="h-full !text-sm !px-0 aspect-initial">
         <div class="i-carbon:chevron-up opacity-50" />
       </IconButton>
     </template>

@@ -10,7 +10,7 @@ type Defined<T> = T extends undefined ? never : T
 type MimeType = Defined<RecorderOptions['mimeType']>
 
 export const recordingName = ref('')
-export const recordCamera = ref(true)
+export const recordCamera = ref(false)
 export const recordBrowserAudio = useLocalStorage('slidev-record-browser-audio', true)
 export const mimeType = useLocalStorage<MimeType>('slidev-record-mimetype', 'video/webm')
 export const frameRate = useLocalStorage<number>('slidev-record-framerate', 30)
@@ -180,10 +180,26 @@ export function useRecording() {
         // @ts-expect-error experimental API
         suppressLocalAudioPlayback: false,
       }
+      console.log('Attempting to record browser audio with options:', displayMediaOptions.audio)
     }
 
-    streamCapture.value = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
-    streamCapture.value.addEventListener('inactive', stopRecording)
+    try {
+      console.log('Requesting display media with options:', displayMediaOptions)
+      streamCapture.value = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
+      console.log('Display media obtained successfully:', streamCapture.value)
+      streamCapture.value.addEventListener('inactive', stopRecording)
+    } catch (error) {
+      console.error('Failed to get display media:', error)
+      // 如果浏览器音频录制失败，尝试不录制音频的方式
+      if (recordBrowserAudio.value && displayMediaOptions.audio) {
+        console.log('Retrying without browser audio...')
+        delete displayMediaOptions.audio
+        streamCapture.value = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions)
+        streamCapture.value.addEventListener('inactive', stopRecording)
+      } else {
+        throw error
+      }
+    }
 
     // We need to create a new Stream to merge video and audio to have the inactive event working on streamCapture
     streamSlides.value = new MediaStream()
@@ -195,22 +211,33 @@ export function useRecording() {
     // 首先尝试从屏幕捕获流中获取音频（浏览器音频）
     if (recordBrowserAudio.value) {
       const systemAudioTracks = streamCapture.value!.getAudioTracks()
+      console.log('Browser audio tracks found:', systemAudioTracks.length)
       if (systemAudioTracks.length > 0) {
         audioTrack = systemAudioTracks[0]
+        console.log('Using browser audio track:', audioTrack.label)
+      } else {
+        console.log('No browser audio tracks found in display media stream')
       }
     }
 
     // 如果没有浏览器音频，尝试使用麦克风音频
     if (!audioTrack && streamCamera.value) {
       const micAudioTracks = streamCamera.value!.getAudioTracks()
+      console.log('Microphone audio tracks found:', micAudioTracks.length)
       if (micAudioTracks.length > 0) {
         audioTrack = micAudioTracks[0]
+        console.log('Using microphone audio track:', audioTrack.label)
+      } else {
+        console.log('No microphone audio tracks found')
       }
     }
 
     // 将音频轨道添加到幻灯片录制流
     if (audioTrack) {
       streamSlides.value!.addTrack(audioTrack)
+      console.log('Audio track added to slides stream')
+    } else {
+      console.log('No audio track available for recording')
     }
 
     // merge config
